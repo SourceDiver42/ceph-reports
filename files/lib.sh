@@ -45,5 +45,19 @@ alert_mail() {
   send_mail "$subject" "$f" || true
 }
 
+# Best-effort cluster-name resolution from a ConfigMap when not set explicitly.
+if [ -z "${CLUSTER_NAME:-}" ] && [ -n "${CLUSTER_NAME_CM:-}" ]; then
+  CLUSTER_NAME="$(kubectl -n "${CLUSTER_NAME_CM_NS:-kube-system}" get configmap "${CLUSTER_NAME_CM}" \
+    -o jsonpath="{.data.${CLUSTER_NAME_CM_KEY:-clusterName}}" 2>/dev/null || true)"
+  export CLUSTER_NAME
+fi
+
+# Effective subject prefix: "<subjectPrefix> [<clusterName>]" when a cluster name is known.
+mail_prefix() {
+  local p="${SUBJECT_PREFIX:-[ceph]}"
+  [ -n "${CLUSTER_NAME:-}" ] && p="${p} [${CLUSTER_NAME}]"
+  printf '%s' "$p"
+}
+
 # jq filter: Ceph CSI PVs only (rbd + cephfs, any rook namespace prefix)
 CEPH_PV_FILTER='select((.spec.csi.driver // "") | test("csi\\.ceph\\.com$"))'

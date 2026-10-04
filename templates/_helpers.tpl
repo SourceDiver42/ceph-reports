@@ -192,6 +192,16 @@ names the scripts expect, plus the subject prefix. Keeps custom key names workin
 {{- $keys := .Values.smtp.keys -}}
 - name: SUBJECT_PREFIX
   value: {{ .Values.mail.subjectPrefix | quote }}
+- name: CLUSTER_NAME
+  value: {{ .Values.mail.clusterName | quote }}
+{{- if .Values.mail.clusterNameFrom.enabled }}
+- name: CLUSTER_NAME_CM
+  value: {{ .Values.mail.clusterNameFrom.configMap.name | quote }}
+- name: CLUSTER_NAME_CM_NS
+  value: {{ .Values.mail.clusterNameFrom.configMap.namespace | quote }}
+- name: CLUSTER_NAME_CM_KEY
+  value: {{ .Values.mail.clusterNameFrom.configMap.key | quote }}
+{{- end }}
 - name: SMTP_URL
   valueFrom:
     secretKeyRef:

@@ -63,7 +63,24 @@
     },
     "mail": {
       "type": "object",
-      "properties": { "subjectPrefix": { "type": "string" } }
+      "properties": {
+        "subjectPrefix": { "type": "string" },
+        "clusterName": { "type": "string" },
+        "clusterNameFrom": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "configMap": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "namespace": { "type": "string" },
+                "key": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
     },
     "common": {
       "type": "object",

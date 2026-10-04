@@ -82,5 +82,5 @@ jq -r '
   cat body.txt
 } > report.txt
 
-send_mail "${SUBJECT_PREFIX:-[ceph]} Daily PVC mapping: ${total} PVCs, ${unmounted} unmounted" \
+send_mail "$(mail_prefix) Daily PVC mapping: ${total} PVCs, ${unmounted} unmounted" \
   report.txt mapping.json

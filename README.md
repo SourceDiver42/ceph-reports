@@ -112,6 +112,8 @@ weekly:
 | `smtp.keys.{url,user,pass,from,to}` | `SMTP_*`/`MAIL_*` | Secret key names (remap to match your secret). |
 | `smtp.secret.create` | `false` | Render an inline secret from values (DEV ONLY). |
 | `mail.subjectPrefix` | `[ceph]` | Subject prefix for all report emails. |
+| `mail.clusterName` | `""` | Appended to the subject as `<prefix> [<clusterName>]`. Set per environment. |
+| `mail.clusterNameFrom.enabled` | `false` | Best-effort: read the cluster name from a ConfigMap at runtime when `clusterName` is empty. |
 | `daily.*` / `weekly.*` | see `values.yaml` | Per-job `enabled`, `schedule`, `timeZone`, `concurrencyPolicy`, history limits, `backoffLimit`, `ttlSecondsAfterFinished`, `suspend`, `resources`, `nodeSelector`, `tolerations`, `affinity`, `extraEnv`. |
 | `weekly.ceph.mode` | `toolbox` | `toolbox` or `client`. |
 | `weekly.ceph.autoDiscover` | `true` | Discover pools/filesystems when the lists are empty. |
@@ -119,6 +121,29 @@ weekly:
 | `weekly.ceph.cephfs.names` | `[]` | CephFS filesystems to scan. |
 
 See [`values.yaml`](values.yaml) for the full, documented list.
+
+## Cluster name in the subject
+
+Kubernetes has no universal "cluster name" API, so set it explicitly per
+environment (works well with per-environment GitOps values):
+
+```yaml
+mail:
+  clusterName: turing   # subjects become "[ceph] [turing] ..."
+```
+
+Optionally auto-detect it from a ConfigMap at runtime (creates a `configmaps:get`
+Role in that namespace):
+
+```yaml
+mail:
+  clusterNameFrom:
+    enabled: true
+    configMap:
+      name: kubeadm-config
+      namespace: kube-system
+      key: clusterName   # adjust to your ConfigMap's layout
+```
 
 ## Email
 

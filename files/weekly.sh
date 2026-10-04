@@ -35,7 +35,7 @@ CEPHFS_NAMES="${CEPHFS_NAMES:-}"             # space separated; empty + auto -> 
 CEPHFS_SVG="${CEPHFS_SVG:-csi}"              # subvolume group used by ceph-csi
 
 fail() {
-  alert_mail "${SUBJECT_PREFIX:-[ceph]} Weekly orphan report FAILED" "$1"
+  alert_mail "$(mail_prefix) Weekly orphan report FAILED" "$1"
   echo "FATAL: $1" >&2
   exit 1
 }
@@ -204,5 +204,5 @@ n_rel=$(jq -r '.count' released.json)
   echo "NOTE: review before deleting. watchers>0 means a client still has the image open."
 } > report.txt
 
-send_mail "${SUBJECT_PREFIX:-[ceph]} Weekly orphan report: ${n_orph} orphaned, ${n_rel} released PVs" \
+send_mail "$(mail_prefix) Weekly orphan report: ${n_orph} orphaned, ${n_rel} released PVs" \
   report.txt orphans.json released.json

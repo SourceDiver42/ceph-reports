@@ -73,6 +73,20 @@ smtp:
 mail:
   # -- Subject prefix for all report emails.
   subjectPrefix: "[ceph]"
+  # -- Cluster name appended to the subject as "<subjectPrefix> [<clusterName>]".
+  # Recommended: set this per environment (e.g. turing / mocha) in your values file.
+  clusterName: ""
+  clusterNameFrom:
+    # -- Best-effort: when clusterName is empty, read it from a ConfigMap at runtime.
+    # Creates a Role (configmaps:get) in the ConfigMap's namespace.
+    enabled: false
+    configMap:
+      # -- ConfigMap holding the cluster name (e.g. kubeadm-config).
+      name: ""
+      # -- Namespace of that ConfigMap.
+      namespace: kube-system
+      # -- Data key to read the cluster name from.
+      key: clusterName
 
 # ------------------------------------------------------------------------------
 # Shared pod defaults. Each job inherits these and may override any of them.
