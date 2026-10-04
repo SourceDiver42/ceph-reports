@@ -1,0 +1,91 @@
+{{ template "chart.header" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}{{ template "chart.kubeVersionBadge" . }}
+
+{{ template "chart.description" . }}
+
+1. **Daily PVC → pod mapping** (`*-daily`) — every Ceph CSI PVC, its PV, the Ceph
+   backing object (`pool/image` for RBD, `fsName/subvolume` for CephFS) and every
+   pod + `container:mountPath` that mounts it. Read-only against the Kubernetes API.
+2. **Weekly orphan report** (`*-weekly`) — Ceph objects with no PV in Kubernetes,
+   PVs left `Released`/`Failed`, and RBD trash. Reaches Ceph through the Rook
+   **toolbox** or as a direct **client** (for Rook *external mode*).
+
+Pods satisfy Pod Security Standards **restricted**. Requires Kubernetes >= 1.27.
+
+## Install
+
+```sh
+helm repo add ceph-reports https://sourcediver42.github.io/ceph-reports
+helm repo update
+helm install ceph-reports ceph-reports/ceph-reports \
+  -n ceph-reports --create-namespace \
+  --set smtp.existingSecret=smtp
+```
+
+Create the SMTP secret first (or reference an existing one via `smtp.existingSecret`):
+
+```sh
+kubectl -n ceph-reports create secret generic smtp \
+  --from-literal=SMTP_URL='smtp://smtp.example.com:587' \
+  --from-literal=SMTP_USER='user' --from-literal=SMTP_PASS='pass' \
+  --from-literal=MAIL_FROM='ceph-reports@example.com' \
+  --from-literal=MAIL_TO='you@example.com'
+```
+
+Trigger a one-off run: `kubectl -n ceph-reports create job --from=cronjob/ceph-reports-daily test-daily`
+
+## External Ceph (Rook external mode)
+
+Run the weekly job in **client** mode and install the chart **into your Rook
+external namespace** so the reused Rook secret and the mon-endpoints ConfigMap are
+local (a `secretKeyRef` cannot cross namespaces):
+
+```yaml
+weekly:
+  ceph:
+    mode: client
+    autoDiscover: true          # discover pools/filesystems from Ceph
+    client:
+      image: { repository: quay.io/ceph/ceph, tag: v18 }   # + kubectl, jq, curl, bash, python3
+      auth:
+        existingSecret: rook-csi-rbd-provisioner
+        userIDKey: userID
+        userKeyKey: userKey
+```
+
+## Ceph access modes
+
+| Mode | How it reaches Ceph | RBAC in Ceph namespace | Use when |
+|------|---------------------|------------------------|----------|
+| `toolbox` (default) | `kubectl exec` into `deploy/rook-ceph-tools` | `pods`, `pods/exec`, `deployments:get` | Classic Rook |
+| `client` | Runs `rbd`/`ceph` in the pod against the mons | `configmaps:get` | Rook external mode |
+
+## Cluster name in the subject
+
+Set `mail.clusterName` (recommended, per environment) so subjects read
+`<prefix> [<clusterName>] ...`. Optionally auto-detect from a ConfigMap via
+`mail.clusterNameFrom`.
+
+## Email
+
+Reports are sent with a small Python sender (`smtplib`) that attaches the
+structured JSON (`mapping.json`; `orphans.json` + `released.json`). Falls back to
+`curl` (text only) if `python3` is absent.
+
+## Safety
+
+The weekly job **fails loudly** (non-zero exit + alert email) if a Ceph
+pool/filesystem cannot be listed, rather than reporting a false all-clear.
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesHeader" . }}
+
+{{ template "chart.valuesTable" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "helm-docs.versionFooter" . }}

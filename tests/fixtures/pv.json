@@ -1,0 +1,61 @@
+{
+  "items": [
+    {
+      "metadata": { "name": "pv-rbd-1" },
+      "spec": {
+        "capacity": { "storage": "5Gi" },
+        "persistentVolumeReclaimPolicy": "Delete",
+        "csi": {
+          "driver": "rook-ceph.rbd.csi.ceph.com",
+          "volumeAttributes": { "pool": "replicapool", "imageName": "csi-vol-aaa" }
+        }
+      },
+      "status": { "phase": "Bound" }
+    },
+    {
+      "metadata": { "name": "pv-rbd-2" },
+      "spec": {
+        "capacity": { "storage": "1Gi" },
+        "persistentVolumeReclaimPolicy": "Delete",
+        "csi": {
+          "driver": "rook-ceph.rbd.csi.ceph.com",
+          "volumeAttributes": { "pool": "replicapool", "imageName": "csi-vol-ccc" }
+        }
+      },
+      "status": { "phase": "Bound" }
+    },
+    {
+      "metadata": { "name": "pv-cephfs-1" },
+      "spec": {
+        "capacity": { "storage": "10Gi" },
+        "persistentVolumeReclaimPolicy": "Delete",
+        "csi": {
+          "driver": "rook-ceph.cephfs.csi.ceph.com",
+          "volumeAttributes": { "fsName": "myfs", "subvolumeName": "csi-vol-bbb" }
+        }
+      },
+      "status": { "phase": "Bound" }
+    },
+    {
+      "metadata": { "name": "pv-rbd-rel" },
+      "spec": {
+        "capacity": { "storage": "5Gi" },
+        "persistentVolumeReclaimPolicy": "Retain",
+        "claimRef": { "namespace": "app", "name": "old" },
+        "csi": {
+          "driver": "rook-ceph.rbd.csi.ceph.com",
+          "volumeAttributes": { "pool": "replicapool", "imageName": "csi-vol-rel" }
+        }
+      },
+      "status": { "phase": "Released" }
+    },
+    {
+      "metadata": { "name": "pv-nonceph" },
+      "spec": {
+        "capacity": { "storage": "8Gi" },
+        "csi": { "driver": "ebs.csi.aws.com", "volumeAttributes": {} }
+      },
+      "status": { "phase": "Bound" }
+    }
+  ]
+}

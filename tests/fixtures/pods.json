@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "metadata": { "namespace": "app", "name": "web-0" },
+      "status": { "phase": "Running" },
+      "spec": {
+        "volumes": [
+          { "name": "v1", "persistentVolumeClaim": { "claimName": "data-rbd" } }
+        ],
+        "containers": [
+          { "name": "nginx", "volumeMounts": [ { "name": "v1", "mountPath": "/data" } ] },
+          { "name": "sidecar", "volumeMounts": [ { "name": "v1", "mountPath": "/ro", "readOnly": true } ] }
+        ]
+      }
+    },
+    {
+      "metadata": { "namespace": "app", "name": "fs-0" },
+      "status": { "phase": "Running" },
+      "spec": {
+        "volumes": [
+          { "name": "v", "persistentVolumeClaim": { "claimName": "data-cephfs" } }
+        ],
+        "containers": [
+          { "name": "c", "volumeMounts": [ { "name": "v", "mountPath": "/mnt", "readOnly": true } ] }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "items": [
+    {
+      "metadata": { "namespace": "app", "name": "data-rbd" },
+      "spec": {
+        "volumeName": "pv-rbd-1",
+        "storageClassName": "ceph-block",
+        "resources": { "requests": { "storage": "5Gi" } }
+      }
+    },
+    {
+      "metadata": { "namespace": "app", "name": "data-cephfs" },
+      "spec": {
+        "volumeName": "pv-cephfs-1",
+        "storageClassName": "ceph-fs",
+        "resources": { "requests": { "storage": "10Gi" } }
+      }
+    },
+    {
+      "metadata": { "namespace": "app", "name": "data-unmounted" },
+      "spec": {
+        "volumeName": "pv-rbd-2",
+        "storageClassName": "ceph-block",
+        "resources": { "requests": { "storage": "1Gi" } }
+      }
+    },
+    {
+      "metadata": { "namespace": "app", "name": "data-nonceph" },
+      "spec": {
+        "volumeName": "pv-nonceph",
+        "storageClassName": "gp3",
+        "resources": { "requests": { "storage": "8Gi" } }
+      }
+    }
+  ]
+}
