@@ -1,0 +1,31 @@
+{{- if and .Values.weekly.enabled .Values.rbac.toolboxAccess.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ceph-reports.fullname" . }}-toolbox
+  namespace: {{ include "ceph-reports.cephAccessNamespace" . }}
+  labels:
+    {{- include "ceph-reports.labels" . | nindent 4 }}
+  {{- with (include "ceph-reports.annotations" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+rules:
+{{- if eq .Values.weekly.ceph.mode "toolbox" }}
+  # toolbox mode: find and exec the Rook toolbox pod.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get"]
+{{- else if eq .Values.weekly.ceph.mode "client" }}
+  # client mode: read the Rook mon-endpoints ConfigMap to build ceph.conf.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get"]
+{{- end }}
+{{- end }}

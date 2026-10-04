@@ -1,0 +1,21 @@
+{{- include "ceph-reports.validate" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ceph-reports.fullname" . }}-scripts
+  namespace: {{ include "ceph-reports.namespace" . }}
+  labels:
+    {{- include "ceph-reports.labels" . | nindent 4 }}
+  {{- with (include "ceph-reports.annotations" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+data:
+  lib.sh: |
+{{ .Files.Get "files/lib.sh" | indent 4 }}
+  send_mail.py: |
+{{ .Files.Get "files/send_mail.py" | indent 4 }}
+  daily.sh: |
+{{ .Files.Get "files/daily.sh" | indent 4 }}
+  weekly.sh: |
+{{ .Files.Get "files/weekly.sh" | indent 4 }}

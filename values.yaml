@@ -1,0 +1,252 @@
+# -- Override the chart name used in resource names.
+nameOverride: ""
+# -- Override the full resource name prefix (truncated to 63 chars).
+fullnameOverride: ""
+
+# -- Namespace for all namespaced resources (ServiceAccount, ConfigMap, Secret,
+# CronJobs). Defaults to the release namespace. No Namespace object is created;
+# create the namespace out of band (e.g. let ArgoCD create it).
+namespaceOverride: ""
+
+# -- Labels added to every resource created by this chart.
+commonLabels: {}
+# -- Annotations added to every resource created by this chart.
+commonAnnotations: {}
+
+image:
+  # -- Registry/mirror for the shared kubectl+jq+curl image (prepended to repository).
+  registry: ""
+  # -- Image repository (must contain kubectl, jq, curl and bash).
+  repository: alpine/k8s
+  # -- Image tag. Pin to your cluster's Kubernetes minor version.
+  tag: "1.31.2"
+  # -- Image digest (optional). When set, takes precedence over tag.
+  digest: ""
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent
+
+# -- Image pull secrets for private registries/mirrors.
+imagePullSecrets: []
+
+serviceAccount:
+  # -- Create a ServiceAccount.
+  create: true
+  # -- Name of the ServiceAccount. Generated from the fullname when empty.
+  name: ""
+  # -- Annotations for the ServiceAccount.
+  annotations: {}
+
+rbac:
+  # -- Create the cluster-wide read ClusterRole/ClusterRoleBinding (pods, PVCs, PVs).
+  create: true
+  toolboxAccess:
+    # -- Create the Role/RoleBinding in the toolbox namespace (weekly job). In
+    # toolbox mode this grants pods/exec; in client mode it grants read access to
+    # the mon-endpoints ConfigMap. ArgoCD must be allowed to manage that namespace.
+    create: true
+
+smtp:
+  # -- Use a pre-existing Secret with the SMTP keys below. Highest priority source.
+  existingSecret: ""
+  # -- Keys read from the SMTP secret (via envFrom + explicit mapping).
+  keys:
+    url: SMTP_URL
+    user: SMTP_USER
+    pass: SMTP_PASS
+    from: MAIL_FROM
+    to: MAIL_TO
+  secret:
+    # -- Render an inline Secret from the values below. DEV ONLY — do not commit
+    # real credentials. Prefer existingSecret in production.
+    create: false
+    # -- SMTP URL, e.g. smtp://smtp.example.com:587 (smtps://host:465 for implicit TLS).
+    url: "smtp://smtp.example.com:587"
+    # -- SMTP username (placeholder).
+    user: "user"
+    # -- SMTP password (placeholder).
+    pass: "changeme"
+    # -- Envelope/From address (placeholder).
+    from: "ceph-reports@example.com"
+    # -- Recipient address (placeholder).
+    to: "you@example.com"
+
+mail:
+  # -- Subject prefix for all report emails.
+  subjectPrefix: "[ceph]"
+
+# ------------------------------------------------------------------------------
+# Shared pod defaults. Each job inherits these and may override any of them.
+# ------------------------------------------------------------------------------
+common:
+  # -- Pod-level securityContext applied to both jobs (Pod Security "restricted").
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    fsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container-level securityContext applied to both jobs (PSS "restricted").
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+        - ALL
+  # -- Labels added to both job pods.
+  podLabels: {}
+  # -- Annotations added to both job pods.
+  podAnnotations: {}
+  # -- Default resource requests/limits for both jobs.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+# ------------------------------------------------------------------------------
+# Daily PVC -> pod mapping job (read-only against the Kubernetes API).
+# ------------------------------------------------------------------------------
+daily:
+  # -- Enable the daily CronJob.
+  enabled: true
+  # -- Cron schedule.
+  schedule: "0 7 * * *"
+  # -- IANA time zone (requires Kubernetes >= 1.27).
+  timeZone: "Europe/Luxembourg"
+  # -- concurrencyPolicy for the CronJob.
+  concurrencyPolicy: Forbid
+  # -- Successful job history kept.
+  successfulJobsHistoryLimit: 3
+  # -- Failed job history kept.
+  failedJobsHistoryLimit: 3
+  # -- Pod backoffLimit.
+  backoffLimit: 2
+  # -- TTL (seconds) after finished.
+  ttlSecondsAfterFinished: 86400
+  # -- Suspend the schedule.
+  suspend: false
+  # -- Override common.resources for this job.
+  resources: {}
+  # -- Override/extend common.podSecurityContext for this job.
+  podSecurityContext: {}
+  # -- Override/extend common.securityContext for this job.
+  securityContext: {}
+  # -- Additional pod labels for this job (merged over common.podLabels).
+  podLabels: {}
+  # -- Additional pod annotations for this job (merged over common.podAnnotations).
+  podAnnotations: {}
+  # -- Node selector for this job.
+  nodeSelector: {}
+  # -- Tolerations for this job.
+  tolerations: []
+  # -- Affinity for this job.
+  affinity: {}
+  # -- Extra environment variables for this job.
+  extraEnv: []
+
+# ------------------------------------------------------------------------------
+# Weekly orphan report job (reaches Ceph via toolbox or direct client).
+# ------------------------------------------------------------------------------
+weekly:
+  # -- Enable the weekly CronJob.
+  enabled: true
+  # -- Cron schedule.
+  schedule: "30 7 * * 1"
+  # -- IANA time zone.
+  timeZone: "Europe/Luxembourg"
+  # -- concurrencyPolicy for the CronJob.
+  concurrencyPolicy: Forbid
+  # -- Successful job history kept.
+  successfulJobsHistoryLimit: 3
+  # -- Failed job history kept.
+  failedJobsHistoryLimit: 3
+  # -- Pod backoffLimit.
+  backoffLimit: 2
+  # -- TTL (seconds) after finished.
+  ttlSecondsAfterFinished: 604800
+  # -- Suspend the schedule.
+  suspend: false
+  # -- Override common.resources for this job.
+  resources: {}
+  # -- Override/extend common.podSecurityContext for this job.
+  podSecurityContext: {}
+  # -- Override/extend common.securityContext for this job.
+  securityContext: {}
+  # -- Additional pod labels for this job.
+  podLabels: {}
+  # -- Additional pod annotations for this job.
+  podAnnotations: {}
+  # -- Node selector for this job.
+  nodeSelector: {}
+  # -- Tolerations for this job.
+  tolerations: []
+  # -- Affinity for this job.
+  affinity: {}
+  # -- Extra environment variables for this job.
+  extraEnv: []
+
+  ceph:
+    # -- How the weekly job reaches Ceph. "toolbox" execs the Rook toolbox;
+    # "client" runs rbd/ceph directly in the pod (use this for Rook EXTERNAL mode).
+    mode: toolbox
+
+    # -- When rbdPools / cephfs.names are empty, discover them from Ceph itself
+    # (ceph osd pool ls detail, ceph fs ls). Set the lists below to pin them instead.
+    autoDiscover: true
+
+    # -- RBD pools to scan (joined into RBD_POOLS). Empty + autoDiscover = discover.
+    rbdPools: []
+    cephfs:
+      # -- CephFS filesystem names to scan (joined into CEPHFS_NAMES). Empty + autoDiscover = discover.
+      names: []
+      # -- CephFS subvolume group used by ceph-csi.
+      subvolumeGroup: csi
+
+    toolbox:
+      # -- Namespace of the Rook toolbox. Also where the toolbox Role/RoleBinding
+      # are created in toolbox mode.
+      namespace: rook-ceph
+      # -- kubectl exec target for toolbox mode.
+      target: deploy/rook-ceph-tools
+
+    # client mode: run rbd/ceph in the job pod against the external mons.
+    client:
+      image:
+        # -- Registry/mirror for the client image (prepended to repository).
+        registry: ""
+        # -- Image with ceph-common PLUS kubectl, jq, curl, bash, python3. Required for client mode.
+        repository: ""
+        # -- Client image tag.
+        tag: ""
+        # -- Client image digest (optional; overrides tag).
+        digest: ""
+      # Credentials. Preferred: reuse an existing Rook secret (same namespace as the
+      # release) — e.g. rook-csi-rbd-provisioner (keys userID/userKey) or
+      # rook-ceph-mon (keys ceph-username/ceph-secret). A runtime keyring is built
+      # from it. NOTE: the CSI provisioner key is read-write capable; it works for a
+      # read-only report but is broader than needed.
+      auth:
+        # -- Existing (Rook) secret holding the Ceph user id and key. Empty = use a keyring file (below).
+        existingSecret: ""
+        # -- Secret key holding the Ceph client id (e.g. "userID", or "ceph-username").
+        userIDKey: userID
+        # -- Secret key holding the Ceph key (e.g. "userKey", or "ceph-secret").
+        userKeyKey: userKey
+      # -- Static Ceph auth id, used only when auth.existingSecret is empty (keyring-file path).
+      user: "admin"
+      # -- Path the keyring file is mounted at (keyring-file fallback).
+      keyringPath: /etc/ceph/keyring
+      # -- Existing Secret containing a keyring FILE; mounted at keyringPath. Used when auth.existingSecret is empty.
+      keyringSecret: ""
+      # -- Key within keyringSecret that holds the keyring file.
+      keyringSecretKey: keyring
+      # -- Explicit "host:port,host:port" mon list. Empty = read from the ConfigMap below.
+      monHost: ""
+      # -- Namespace of the Rook mon-endpoints ConfigMap. Empty = release namespace
+      # (install into your Rook external namespace so secrets/configmap are local).
+      monEndpointsNamespace: ""
+      # -- Name of the Rook mon-endpoints ConfigMap.
+      monEndpointsConfigMap: rook-ceph-mon-endpoints

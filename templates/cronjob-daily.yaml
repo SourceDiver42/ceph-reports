@@ -1,0 +1,90 @@
+{{- if .Values.daily.enabled -}}
+{{- $job := .Values.daily -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "ceph-reports.fullname" . }}-daily
+  namespace: {{ include "ceph-reports.namespace" . }}
+  labels:
+    {{- include "ceph-reports.labels" . | nindent 4 }}
+  {{- with (include "ceph-reports.annotations" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  schedule: {{ $job.schedule | quote }}
+  timeZone: {{ $job.timeZone | quote }}
+  concurrencyPolicy: {{ $job.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ $job.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit }}
+  {{- if $job.suspend }}
+  suspend: true
+  {{- end }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ $job.backoffLimit }}
+      ttlSecondsAfterFinished: {{ $job.ttlSecondsAfterFinished }}
+      template:
+        metadata:
+          labels:
+            {{- include "ceph-reports.selectorLabels" . | nindent 12 }}
+            {{- with (include "ceph-reports.podLabels" (dict "ctx" . "job" $job)) }}
+            {{- . | nindent 12 }}
+            {{- end }}
+          {{- with (include "ceph-reports.podAnnotations" (dict "ctx" . "job" $job)) }}
+          annotations:
+            {{- . | nindent 12 }}
+          {{- end }}
+        spec:
+          serviceAccountName: {{ include "ceph-reports.serviceAccountName" . }}
+          restartPolicy: OnFailure
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (include "ceph-reports.podSecurityContext" (dict "ctx" . "job" $job)) }}
+          securityContext:
+            {{- . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: report
+              image: {{ include "ceph-reports.image" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["/bin/bash", "/scripts/daily.sh"]
+              env:
+                {{- include "ceph-reports.smtpEnv" . | nindent 16 }}
+                {{- with $job.extraEnv }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              {{- with (include "ceph-reports.securityContext" (dict "ctx" . "job" $job)) }}
+              securityContext:
+                {{- . | nindent 16 }}
+              {{- end }}
+              resources:
+                {{- toYaml (default .Values.common.resources $job.resources) | nindent 16 }}
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          {{- with $job.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $job.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $job.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumes:
+            - name: scripts
+              configMap:
+                name: {{ include "ceph-reports.fullname" . }}-scripts
+                defaultMode: 0555
+            - name: tmp
+              emptyDir: {}
+{{- end }}

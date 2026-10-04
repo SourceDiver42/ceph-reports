@@ -1,0 +1,65 @@
+# External-mode Ceph (client mode) with custom labels and pod security.
+# Install INTO your Rook external namespace so the reused Rook secret and the
+# mon-endpoints ConfigMap are local:
+#   helm install ceph-reports ./ceph-reports -n rook-ceph-external -f all-enabled-values.yaml
+# (secretKeyRef cannot cross namespaces, which is why reuse requires same-namespace.)
+
+commonLabels:
+  team: platform
+  environment: prod
+commonAnnotations:
+  example.com/owner: storage
+
+serviceAccount:
+  create: true
+
+rbac:
+  create: true
+  toolboxAccess:
+    create: true
+
+smtp:
+  existingSecret: "ceph-reports-smtp"
+
+mail:
+  subjectPrefix: "[ceph][prod]"
+
+common:
+  podLabels:
+    tier: reporting
+  podAnnotations:
+    prometheus.io/scrape: "false"
+  podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+daily:
+  enabled: true
+  podLabels:
+    report: daily
+
+weekly:
+  enabled: true
+  podLabels:
+    report: weekly
+  ceph:
+    mode: client
+    # rbdPools / cephfs.names left empty -> auto-discovered from Ceph.
+    autoDiscover: true
+    cephfs:
+      subvolumeGroup: csi
+    client:
+      image:
+        repository: quay.io/ceph/ceph
+        tag: v18
+      # Reuse an existing Rook CSI secret (same namespace as the release).
+      auth:
+        existingSecret: rook-csi-rbd-provisioner
+        userIDKey: userID
+        userKeyKey: userKey
+      monEndpointsConfigMap: rook-ceph-mon-endpoints
+

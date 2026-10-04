@@ -1,0 +1,16 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ceph-reports.fullname" . }}-read
+  labels:
+    {{- include "ceph-reports.labels" . | nindent 4 }}
+  {{- with (include "ceph-reports.annotations" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "persistentvolumeclaims", "persistentvolumes"]
+    verbs: ["get", "list"]
+{{- end }}

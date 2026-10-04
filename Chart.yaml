@@ -1,0 +1,18 @@
+apiVersion: v2
+name: ceph-reports
+description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.27.0-0"
+keywords:
+  - ceph
+  - rook
+  - rbd
+  - cephfs
+  - reporting
+home: https://github.com/SourceDiver42/ceph-reports
+sources:
+  - https://github.com/SourceDiver42/ceph-reports
+maintainers:
+  - name: SourceDiver42

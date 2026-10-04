@@ -1,0 +1,33 @@
+ceph-reports {{ .Chart.AppVersion }} installed into namespace "{{ include "ceph-reports.namespace" . }}".
+
+CronJobs:
+{{- if .Values.daily.enabled }}
+  - {{ include "ceph-reports.fullname" . }}-daily    schedule "{{ .Values.daily.schedule }}" ({{ .Values.daily.timeZone }})
+{{- end }}
+{{- if .Values.weekly.enabled }}
+  - {{ include "ceph-reports.fullname" . }}-weekly   schedule "{{ .Values.weekly.schedule }}" ({{ .Values.weekly.timeZone }})  ceph.mode={{ .Values.weekly.ceph.mode }}
+{{- end }}
+
+Trigger a test run immediately:
+{{- if .Values.daily.enabled }}
+  kubectl -n {{ include "ceph-reports.namespace" . }} create job --from=cronjob/{{ include "ceph-reports.fullname" . }}-daily  test-daily
+{{- end }}
+{{- if .Values.weekly.enabled }}
+  kubectl -n {{ include "ceph-reports.namespace" . }} create job --from=cronjob/{{ include "ceph-reports.fullname" . }}-weekly test-weekly
+{{- end }}
+
+SMTP secret source:
+{{- if .Values.smtp.existingSecret }}
+  existingSecret: {{ .Values.smtp.existingSecret }}
+{{- else if .Values.smtp.secret.create }}
+  inline Secret {{ include "ceph-reports.secretName" . }} (DEV ONLY — replace with real secret management)
+{{- else }}
+  WARNING: no SMTP secret source configured. Set smtp.existingSecret or smtp.secret.create.
+{{- end }}
+{{- if eq .Values.weekly.ceph.mode "client" }}
+
+Ceph client mode is enabled (external Ceph). Ensure:
+  - weekly.ceph.client.image points to an image with ceph-common + kubectl + jq + curl
+  - weekly.ceph.client.keyringSecret holds a read-only keyring for user "{{ .Values.weekly.ceph.client.user }}"
+  - weekly.ceph.rbdPools / cephfs.names list your real pools/filesystems
+{{- end }}

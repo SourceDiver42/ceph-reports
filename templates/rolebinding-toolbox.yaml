@@ -1,0 +1,21 @@
+{{- if and .Values.weekly.enabled .Values.rbac.toolboxAccess.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ceph-reports.fullname" . }}-toolbox
+  namespace: {{ include "ceph-reports.cephAccessNamespace" . }}
+  labels:
+    {{- include "ceph-reports.labels" . | nindent 4 }}
+  {{- with (include "ceph-reports.annotations" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "ceph-reports.fullname" . }}-toolbox
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "ceph-reports.serviceAccountName" . }}
+    namespace: {{ include "ceph-reports.namespace" . }}
+{{- end }}

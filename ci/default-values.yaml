@@ -1,0 +1,4 @@
+# Default/toolbox-mode install. Uses an inline dev secret so the render is complete.
+smtp:
+  secret:
+    create: true
