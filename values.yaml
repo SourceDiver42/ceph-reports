@@ -239,12 +239,39 @@ weekly:
       image:
         # -- Registry/mirror for the client image (prepended to repository).
         registry: ""
-        # -- Image with ceph-common PLUS kubectl, jq, curl, bash, python3. Required for client mode.
+        # -- Image with ceph-common + rbd (e.g. quay.io/ceph/ceph pinned to your
+        # cluster's version). kubectl and jq are supplied by the tools init
+        # container below, so the base image only needs ceph-common, bash,
+        # python3 and curl. Required for client mode.
         repository: ""
         # -- Client image tag.
         tag: ""
         # -- Client image digest (optional; overrides tag).
         digest: ""
+      # -- Init container that stages kubectl + jq onto PATH for the client pod,
+      # so the main image can be a plain ceph image pinned to the cluster
+      # version. Binaries are downloaded as static (libc-independent) builds,
+      # because the ceph base image is glibc and a musl jq copied from an Alpine
+      # tools image would not run. Needs egress to dl.k8s.io and github.com; for
+      # airgapped clusters, bake the tools into client.image and set enabled=false.
+      toolsInit:
+        # -- Enable the kubectl/jq init container (client mode only).
+        enabled: true
+        # -- Directory the binaries are written to and prepended to PATH.
+        mountPath: /opt/tools/bin
+        # -- Pinned kubectl release to download (static binary from dl.k8s.io).
+        kubectlVersion: v1.31.2
+        # -- Pinned jq release to download (static binary from github.com/jqlang/jq).
+        jqVersion: "1.7.1"
+        image:
+          # -- Registry/mirror for the tools image.
+          registry: ""
+          # -- Tools image providing sh + curl to fetch the binaries. Empty = reuse the shared chart image (image.*).
+          repository: ""
+          # -- Tools image tag.
+          tag: ""
+          # -- Tools image digest (optional; overrides tag).
+          digest: ""
       # Credentials. Preferred: reuse an existing Rook secret (same namespace as the
       # release) — e.g. rook-csi-rbd-provisioner (keys userID/userKey) or
       # rook-ceph-mon (keys ceph-username/ceph-secret). A runtime keyring is built

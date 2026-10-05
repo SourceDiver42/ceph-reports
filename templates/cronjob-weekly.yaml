@@ -48,6 +48,38 @@ spec:
           securityContext:
             {{- . | nindent 12 }}
           {{- end }}
+          {{- $toolsInit := $ceph.client.toolsInit }}
+          {{- $useTools := and $client $toolsInit.enabled }}
+          {{- if $useTools }}
+          initContainers:
+            - name: tools
+              image: {{ include "ceph-reports.weekly.toolsImage" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  arch="$(uname -m)"
+                  case "$arch" in
+                    x86_64) arch=amd64 ;;
+                    aarch64|arm64) arch=arm64 ;;
+                  esac
+                  curl -fsSL -o {{ $toolsInit.mountPath }}/kubectl \
+                    "https://dl.k8s.io/release/{{ $toolsInit.kubectlVersion }}/bin/linux/${arch}/kubectl"
+                  curl -fsSL -o {{ $toolsInit.mountPath }}/jq \
+                    "https://github.com/jqlang/jq/releases/download/jq-{{ $toolsInit.jqVersion }}/jq-linux-${arch}"
+                  chmod +x {{ $toolsInit.mountPath }}/kubectl {{ $toolsInit.mountPath }}/jq
+              {{- with (include "ceph-reports.securityContext" (dict "ctx" . "job" $job)) }}
+              securityContext:
+                {{- . | nindent 16 }}
+              {{- end }}
+              resources:
+                {{- toYaml (default .Values.common.resources $job.resources) | nindent 16 }}
+              volumeMounts:
+                - name: tools-bin
+                  mountPath: {{ $toolsInit.mountPath }}
+          {{- end }}
           containers:
             - name: report
               image: {{ include "ceph-reports.weekly.image" . }}
@@ -55,6 +87,10 @@ spec:
               command: ["/bin/bash", "/scripts/weekly.sh"]
               env:
                 {{- include "ceph-reports.smtpEnv" . | nindent 16 }}
+                {{- if $useTools }}
+                - name: PATH
+                  value: "{{ $toolsInit.mountPath }}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                {{- end }}
                 - name: CEPH_MODE
                   value: {{ $ceph.mode | quote }}
                 - name: AUTO_DISCOVER
@@ -115,6 +151,11 @@ spec:
                   mountPath: {{ dir $ceph.client.keyringPath }}
                   readOnly: true
                 {{- end }}
+                {{- if $useTools }}
+                - name: tools-bin
+                  mountPath: {{ $toolsInit.mountPath }}
+                  readOnly: true
+                {{- end }}
                 {{- with $job.extraVolumeMounts }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
@@ -145,6 +186,10 @@ spec:
                   - key: {{ $ceph.client.keyringSecretKey }}
                     path: {{ base $ceph.client.keyringPath }}
                 defaultMode: 0400
+            {{- end }}
+            {{- if $useTools }}
+            - name: tools-bin
+              emptyDir: {}
             {{- end }}
             {{- with $job.extraVolumes }}
             {{- toYaml . | nindent 12 }}

@@ -131,6 +131,28 @@ ceph-common), otherwise the shared image.
 {{- end -}}
 
 {{/*
+Image for the client-mode tools init container (provides kubectl + jq). Defaults
+to the shared chart image, which already carries both static binaries.
+*/}}
+{{- define "ceph-reports.weekly.toolsImage" -}}
+{{- $init := .Values.weekly.ceph.client.toolsInit -}}
+{{- if $init.image.repository -}}
+{{- $img := $init.image -}}
+{{- $repo := $img.repository -}}
+{{- if $img.registry -}}
+{{- $repo = printf "%s/%s" $img.registry $img.repository -}}
+{{- end -}}
+{{- if $img.digest -}}
+{{- printf "%s@%s" $repo $img.digest -}}
+{{- else -}}
+{{- printf "%s:%s" $repo ($img.tag | default "latest") -}}
+{{- end -}}
+{{- else -}}
+{{- include "ceph-reports.image" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Name of the Secret holding SMTP credentials.
 */}}
 {{- define "ceph-reports.secretName" -}}

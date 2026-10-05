@@ -1,0 +1,32 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+      - name: Lint
+        run: |
+          helm lint . -f ci/default-values.yaml
+          helm lint . -f ci/all-enabled-values.yaml
+      - name: Render (toolbox and client modes)
+        run: |
+          helm template ct . -f ci/default-values.yaml > /dev/null
+          helm template ct . -f ci/all-enabled-values.yaml > /dev/null
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Offline fixture tests
+        run: tests/run.sh

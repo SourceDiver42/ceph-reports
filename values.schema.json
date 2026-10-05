@@ -125,6 +125,7 @@
                   "type": "object",
                   "properties": {
                     "image": { "type": "object" },
+                    "toolsInit": { "type": "object" },
                     "user": { "type": "string" },
                     "keyringPath": { "type": "string" },
                     "keyringSecret": { "type": "string" },

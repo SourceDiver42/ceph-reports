@@ -115,6 +115,7 @@ weekly:
 | `mail.clusterName` | `""` | Appended to the subject as `<prefix> [<clusterName>]`. Set per environment. |
 | `mail.clusterNameFrom.enabled` | `false` | Best-effort: read the cluster name from a ConfigMap at runtime when `clusterName` is empty. |
 | `daily.*` / `weekly.*` | see `values.yaml` | Per-job `enabled`, `schedule`, `timeZone`, `concurrencyPolicy`, history limits, `backoffLimit`, `ttlSecondsAfterFinished`, `suspend`, `resources`, `nodeSelector`, `tolerations`, `affinity`, `extraEnv`, `extraVolumes`, `extraVolumeMounts`. |
+| `weekly.ceph.client.toolsInit.*` | `enabled: true`, `mountPath: /opt/tools/bin` | Client mode only: init container that stages static `kubectl` + `jq` onto `PATH`, so the main image can be a plain `ceph` image pinned to the cluster version. Set `image.*` to override the tools image (defaults to the shared chart image). |
 | `weekly.ceph.mode` | `toolbox` | `toolbox` or `client`. |
 | `weekly.ceph.autoDiscover` | `true` | Discover pools/filesystems when the lists are empty. |
 | `weekly.ceph.rbdPools` | `[]` | RBD pools to scan (empty + autoDiscover = discover). |
