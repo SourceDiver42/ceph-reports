@@ -84,10 +84,13 @@ chmod +x "$WORK"/bin/*
 # --- scripts (rewrite absolute paths to the sandbox) --------------------------
 for f in lib.sh daily.sh weekly.sh send_mail.py; do cp "$FILES/$f" "$WORK/scripts/$f"; done
 for f in daily.sh weekly.sh; do
+  # Order matters: rewrite the /tmp/ runtime paths BEFORE inserting $WORK (which
+  # itself lives under /tmp on most systems), otherwise the /tmp/ rule re-mangles
+  # the $WORK prefix the other rules just inserted.
   sed -i.bak \
-    -e "s|/scripts/|$WORK/scripts/|g" \
-    -e "s|cd /tmp|cd $WORK/run|g" \
     -e "s|/tmp/|$WORK/run/|g" \
+    -e "s|cd /tmp|cd $WORK/run|g" \
+    -e "s|/scripts/|$WORK/scripts/|g" \
     "$WORK/scripts/$f"
   rm -f "$WORK/scripts/$f.bak"
 done
