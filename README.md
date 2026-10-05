@@ -46,8 +46,27 @@ kubectl -n ceph-reports create job --from=cronjob/ceph-reports-daily test-daily
 
 In external mode the admin toolbox usually does not exist, so run the weekly job
 in **client** mode and **install the chart into your Rook external namespace** so
-the reused Rook secret and the mon-endpoints ConfigMap are local (a `secretKeyRef`
+the credential secret and the mon-endpoints ConfigMap are local (a `secretKeyRef`
 cannot cross namespaces).
+
+> **Do not reuse the Rook CSI/mon secrets.** Their cephx caps are scoped to CSI's
+> own job, so the report hits `Operation not permitted`. Verified against a real
+> cluster:
+>
+> | Rook credential | denied on | why |
+> |---|---|---|
+> | `rook-csi-rbd-provisioner` | `ceph fs ls` | `mon 'profile rbd'` has no fsmap read |
+> | `rook-csi-cephfs-provisioner` | `rbd ls` | `osd` cap is cephfs-tagged only |
+> | `rook-ceph-mon` (healthchecker) | `ceph fs subvolume ls` | `mgr 'allow command config'` too narrow |
+>
+> Create one dedicated **read-only** user instead:
+>
+> ```sh
+> ceph auth get-or-create client.report \
+>   mon 'allow r' mgr 'allow r' mds 'allow r' osd 'profile rbd-read-only, allow r'
+> kubectl -n rook-ceph-external create secret generic ceph-report-creds \
+>   --from-literal=userID=report --from-literal=userKey=<key-from-above>
+> ```
 
 ```yaml
 # values-external.yaml
@@ -60,7 +79,7 @@ weekly:
         repository: quay.io/ceph/ceph   # must also contain kubectl, jq, curl, bash, python3
         tag: v18
       auth:
-        existingSecret: rook-csi-rbd-provisioner   # reuse a Rook secret
+        existingSecret: ceph-report-creds   # dedicated read-only user (see above)
         userIDKey: userID
         userKeyKey: userKey
 ```
@@ -71,10 +90,16 @@ helm install ceph-reports ceph-reports/ceph-reports \
   --set smtp.existingSecret=smtp
 ```
 
-> The CSI provisioner key is read-write capable; it works for a read-only report
-> but is broader than needed. A dedicated read-only Ceph user is cleaner. The caps
-> required are roughly `mon 'allow r', mgr 'allow r', osd 'allow r'` (auto-discovery
-> uses `ceph osd pool ls detail` and `ceph fs ls`).
+> **Gotchas seen in testing**
+> - *mon endpoint port:* the mon-endpoints ConfigMap lists `a=<ip>:6789` (msgr v1).
+>   If your mons only bind msgr v2, use `:3300` or the client hangs on connect
+>   (no error, just a stall) — the chart passes the value through verbatim.
+> - *self-signed SMTP CA:* set `SSL_CERT_FILE` via `weekly.extraEnv` and mount the
+>   CA with `weekly.extraVolumeMounts`. It must be a **bundle (public + your CA)**,
+>   not your CA alone — `extraEnv`/`extraVolumeMounts` also apply to the tools init
+>   container, and a private-only bundle breaks its `dl.k8s.io`/`github.com` fetches.
+> - *quick bypass (testing only):* `--set smtp.insecure=true` skips SMTP TLS
+>   verification entirely. Never use it against a real mail server.
 
 Alternatively, mount a keyring file instead of reusing a secret:
 

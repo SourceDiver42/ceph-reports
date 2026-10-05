@@ -28,7 +28,11 @@ send_mail() {
     cat "$bodyfile"
   } | sed 's/$/\r/' > "$msg"
 
-  curl --fail --silent --show-error --ssl-reqd \
+  local insecure=
+  case "$(printf '%s' "${SMTP_INSECURE:-}" | tr 'A-Z' 'a-z')" in
+    1|true|yes) insecure=--insecure ;;
+  esac
+  curl --fail --silent --show-error --ssl-reqd $insecure \
     --url "$SMTP_URL" \
     --user "$SMTP_USER:$SMTP_PASS" \
     --mail-from "$MAIL_FROM" \

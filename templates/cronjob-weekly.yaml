@@ -70,6 +70,10 @@ spec:
                   curl -fsSL -o {{ $toolsInit.mountPath }}/jq \
                     "https://github.com/jqlang/jq/releases/download/jq-{{ $toolsInit.jqVersion }}/jq-linux-${arch}"
                   chmod +x {{ $toolsInit.mountPath }}/kubectl {{ $toolsInit.mountPath }}/jq
+              {{- with $job.extraEnv }}
+              env:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
               {{- with (include "ceph-reports.securityContext" (dict "ctx" . "job" $job)) }}
               securityContext:
                 {{- . | nindent 16 }}
@@ -79,6 +83,9 @@ spec:
               volumeMounts:
                 - name: tools-bin
                   mountPath: {{ $toolsInit.mountPath }}
+                {{- with $job.extraVolumeMounts }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
           {{- end }}
           containers:
             - name: report

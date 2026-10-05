@@ -63,6 +63,12 @@ def main() -> int:
             )
 
     ctx = ssl.create_default_context()
+    # INSECURE (testing only): skip cert verification entirely. Set via the
+    # chart's smtp.insecure=true. Never use against a real mail server.
+    if os.environ.get("SMTP_INSECURE", "").strip().lower() in ("1", "true", "yes"):
+        sys.stderr.write("WARNING: SMTP_INSECURE set; TLS certificate verification disabled\n")
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
     if implicit_tls:
         with smtplib.SMTP_SSL(host, port, context=ctx, timeout=60) as smtp:
             if user:

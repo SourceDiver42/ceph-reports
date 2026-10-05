@@ -46,6 +46,10 @@ rbac:
     create: true
 
 smtp:
+  # -- INSECURE, TESTING ONLY: skip SMTP TLS certificate verification (self-signed
+  # servers). Exposes credentials to MITM. Prefer trusting the CA via a bundle in
+  # weekly.extraEnv (SSL_CERT_FILE) + weekly.extraVolumeMounts instead.
+  insecure: false
   # -- Use a pre-existing Secret with the SMTP keys below. Highest priority source.
   existingSecret: ""
   # -- Keys read from the SMTP secret (via envFrom + explicit mapping).
@@ -272,11 +276,17 @@ weekly:
           tag: ""
           # -- Tools image digest (optional; overrides tag).
           digest: ""
-      # Credentials. Preferred: reuse an existing Rook secret (same namespace as the
-      # release) — e.g. rook-csi-rbd-provisioner (keys userID/userKey) or
-      # rook-ceph-mon (keys ceph-username/ceph-secret). A runtime keyring is built
-      # from it. NOTE: the CSI provisioner key is read-write capable; it works for a
-      # read-only report but is broader than needed.
+      # Credentials. Do NOT reuse the Rook CSI/mon secrets: their cephx caps are
+      # scoped to CSI's job and the report gets "Operation not permitted". Observed:
+      #   csi-rbd-provisioner     -> denied on `ceph fs ls`     (mon 'profile rbd')
+      #   csi-cephfs-provisioner  -> denied on `rbd ls`         (osd cephfs-only)
+      #   healthchecker (rook-ceph-mon) -> denied on `ceph fs subvolume ls` (mgr too narrow)
+      # Create a dedicated READ-ONLY user and reference its key here:
+      #   ceph auth get-or-create client.report \
+      #     mon 'allow r' mgr 'allow r' mds 'allow r' osd 'profile rbd-read-only, allow r'
+      # then: kubectl create secret generic ceph-report-creds \
+      #         --from-literal=userID=report --from-literal=userKey=<key>
+      # A runtime keyring is built from the secret's userID/userKey.
       auth:
         # -- Existing (Rook) secret holding the Ceph user id and key. Empty = use a keyring file (below).
         existingSecret: ""

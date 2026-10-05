@@ -249,4 +249,8 @@ names the scripts expect, plus the subject prefix. Keeps custom key names workin
     secretKeyRef:
       name: {{ $secret }}
       key: {{ $keys.to }}
+{{- if .Values.smtp.insecure }}
+- name: SMTP_INSECURE
+  value: "1"
+{{- end }}
 {{- end -}}
