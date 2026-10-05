@@ -156,6 +156,10 @@ spec:
                   mountPath: {{ $toolsInit.mountPath }}
                   readOnly: true
                 {{- end }}
+                {{- if and $client (not $ceph.client.keyringSecret) }}
+                - name: ceph-etc
+                  mountPath: /etc/ceph
+                {{- end }}
                 {{- with $job.extraVolumeMounts }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
@@ -189,6 +193,10 @@ spec:
             {{- end }}
             {{- if $useTools }}
             - name: tools-bin
+              emptyDir: {}
+            {{- end }}
+            {{- if and $client (not $ceph.client.keyringSecret) }}
+            - name: ceph-etc
               emptyDir: {}
             {{- end }}
             {{- with $job.extraVolumes }}
