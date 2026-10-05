@@ -114,7 +114,7 @@ weekly:
 | `mail.subjectPrefix` | `[ceph]` | Subject prefix for all report emails. |
 | `mail.clusterName` | `""` | Appended to the subject as `<prefix> [<clusterName>]`. Set per environment. |
 | `mail.clusterNameFrom.enabled` | `false` | Best-effort: read the cluster name from a ConfigMap at runtime when `clusterName` is empty. |
-| `daily.*` / `weekly.*` | see `values.yaml` | Per-job `enabled`, `schedule`, `timeZone`, `concurrencyPolicy`, history limits, `backoffLimit`, `ttlSecondsAfterFinished`, `suspend`, `resources`, `nodeSelector`, `tolerations`, `affinity`, `extraEnv`. |
+| `daily.*` / `weekly.*` | see `values.yaml` | Per-job `enabled`, `schedule`, `timeZone`, `concurrencyPolicy`, history limits, `backoffLimit`, `ttlSecondsAfterFinished`, `suspend`, `resources`, `nodeSelector`, `tolerations`, `affinity`, `extraEnv`, `extraVolumes`, `extraVolumeMounts`. |
 | `weekly.ceph.mode` | `toolbox` | `toolbox` or `client`. |
 | `weekly.ceph.autoDiscover` | `true` | Discover pools/filesystems when the lists are empty. |
 | `weekly.ceph.rbdPools` | `[]` | RBD pools to scan (empty + autoDiscover = discover). |

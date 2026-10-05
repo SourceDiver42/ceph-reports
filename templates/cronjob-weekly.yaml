@@ -115,6 +115,9 @@ spec:
                   mountPath: {{ dir $ceph.client.keyringPath }}
                   readOnly: true
                 {{- end }}
+                {{- with $job.extraVolumeMounts }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
           {{- with $job.nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 12 }}
@@ -142,5 +145,8 @@ spec:
                   - key: {{ $ceph.client.keyringSecretKey }}
                     path: {{ base $ceph.client.keyringPath }}
                 defaultMode: 0400
+            {{- end }}
+            {{- with $job.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
 {{- end }}

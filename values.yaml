@@ -160,6 +160,10 @@ daily:
   affinity: {}
   # -- Extra environment variables for this job.
   extraEnv: []
+  # -- Extra volumes added to this job's pod (raw volume specs).
+  extraVolumes: []
+  # -- Extra volume mounts added to the report container (raw volumeMount specs).
+  extraVolumeMounts: []
 
 # ------------------------------------------------------------------------------
 # Weekly orphan report job (reaches Ceph via toolbox or direct client).
@@ -201,6 +205,10 @@ weekly:
   affinity: {}
   # -- Extra environment variables for this job.
   extraEnv: []
+  # -- Extra volumes added to this job's pod (raw volume specs).
+  extraVolumes: []
+  # -- Extra volume mounts added to the report container (raw volumeMount specs).
+  extraVolumeMounts: []
 
   ceph:
     # -- How the weekly job reaches Ceph. "toolbox" execs the Rook toolbox;
