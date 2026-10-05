@@ -1,0 +1,91 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Specific chart version to (re)release, e.g. 0.4.0. Blank = current Chart.yaml."
+        required: false
+
+concurrency:
+  group: chart-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  PAGES_URL: https://sourcediver42.github.io/ceph-reports
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+
+      - name: Resolve version
+        id: v
+        run: |
+          version="${{ github.event.inputs.version }}"
+          if [ -n "$version" ]; then
+            git checkout "v${version}"
+          else
+            version="$(grep -E '^version:' Chart.yaml | awk '{print $2}')"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if the release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ steps.v.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "release ${{ steps.v.outputs.tag }} already exists, nothing to do"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package chart
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          mkdir -p .cr-release-packages
+          helm package . -d .cr-release-packages
+
+      - name: Create GitHub release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.v.outputs.tag }}" .cr-release-packages/*.tgz \
+            --title "${{ steps.v.outputs.tag }}" \
+            --target "$GITHUB_SHA" \
+            --generate-notes
+
+      - name: Refresh gh-pages chart index
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          set -e
+          git fetch origin gh-pages
+          git worktree add gh-pages-wt origin/gh-pages
+          cp .cr-release-packages/*.tgz gh-pages-wt/
+          helm repo index gh-pages-wt --url "$PAGES_URL"
+          cd gh-pages-wt
+          git add -A
+          if git diff --cached --quiet; then
+            echo "chart repo index already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish ${{ steps.v.outputs.tag }}"
+          git push origin HEAD:gh-pages
