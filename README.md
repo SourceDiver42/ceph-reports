@@ -8,9 +8,9 @@ reports (with JSON attachments) for a Rook-Ceph environment:
    every pod + `container:mountPath` that mounts it. Read-only against the
    Kubernetes API. The subject carries total and unmounted counts.
 2. **Weekly orphan report** (`*-weekly`) — Ceph objects with no PV in Kubernetes
-   (with size, creation time and watcher count), PVs left `Released`/`Failed`, and
-   RBD trash. Reaches Ceph either through the Rook **toolbox** or as a direct
-   **client** (for Rook *external mode* clusters with no toolbox).
+   (with size, creation time and watcher count) and RBD trash contents. Reaches
+   Ceph either through the Rook **toolbox** or as a direct **client** (for Rook
+   *external mode* clusters with no toolbox).
 
 Works on Kubernetes >= 1.27 (CronJob `timeZone`). Pods satisfy Pod Security
 Standards **restricted**.
@@ -94,10 +94,20 @@ helm install ceph-reports ceph-reports/ceph-reports \
 > - *mon endpoint port:* the mon-endpoints ConfigMap lists `a=<ip>:6789` (msgr v1).
 >   If your mons only bind msgr v2, use `:3300` or the client hangs on connect
 >   (no error, just a stall) — the chart passes the value through verbatim.
-> - *self-signed SMTP CA:* set `SSL_CERT_FILE` via `weekly.extraEnv` and mount the
->   CA with `weekly.extraVolumeMounts`. It must be a **bundle (public + your CA)**,
->   not your CA alone — `extraEnv`/`extraVolumeMounts` also apply to the tools init
->   container, and a private-only bundle breaks its `dl.k8s.io`/`github.com` fetches.
+> - *self-signed SMTP CA:* trust it with `smtp.caSecret` (a Secret) or
+>   `smtp.caConfigMap` (a ConfigMap — e.g. a cert-manager **trust-manager** Bundle,
+>   whose default target is a ConfigMap synced to every namespace). It mounts into
+>   the report container only and sets `SSL_CERT_FILE`, so your internal CA alone is
+>   enough — no need to include public CAs:
+>   ```sh
+>   # trust-manager Bundle already present in the namespace:
+>   --set smtp.caConfigMap=ceph-reports-trust --set smtp.caConfigMapKey=ca-certificates.crt
+>   # or a plain Secret:
+>   kubectl create secret generic smtp-ca --from-file=ca.crt=ca.pem
+>   --set smtp.caSecret=smtp-ca
+>   ```
+>   (The older `weekly.extraEnv`/`extraVolumeMounts` route still works but also hits
+>   the tools init container, so it needs a public+private bundle — prefer the above.)
 > - *quick bypass (testing only):* `--set smtp.insecure=true` skips SMTP TLS
 >   verification entirely. Never use it against a real mail server.
 
@@ -175,7 +185,7 @@ mail:
 
 Reports are sent with a small Python sender (`smtplib`) that supports attachments,
 so each email carries the structured JSON (`mapping.json` for daily;
-`orphans.json` + `released.json` for weekly). If `python3` is not present in the
+`orphans.json` for weekly). If `python3` is not present in the
 image, it falls back to `curl` (text body only, with a logged warning).
 
 ## Safety

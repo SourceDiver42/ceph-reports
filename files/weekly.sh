@@ -160,21 +160,7 @@ while read -r entry; do
 done < orphans.txt
 jq -s --arg generated "$generated" '{generated:$generated, count:length, items:.}' orphans.ndjson > orphans.json
 
-# Released/Failed PVs (text + JSON).
-jq --arg generated "$generated" "
-  {generated:\$generated,
-   items: [ .items[] | $CEPH_PV_FILTER
-     | select(.status.phase == \"Released\" or .status.phase == \"Failed\")
-     | { name: .metadata.name, phase: .status.phase,
-         reclaimPolicy: .spec.persistentVolumeReclaimPolicy,
-         size: .spec.capacity.storage,
-         claim: \"\(.spec.claimRef.namespace // \"?\")/\(.spec.claimRef.name // \"?\")\",
-         ceph: \"\(.spec.csi.volumeAttributes.pool // .spec.csi.volumeAttributes.fsName // \"?\")/\(.spec.csi.volumeAttributes.imageName // .spec.csi.volumeAttributes.subvolumeName // \"?\")\" } ],
-   count: ([ .items[] | $CEPH_PV_FILTER | select(.status.phase == \"Released\" or .status.phase == \"Failed\") ] | length)}
-" pv.json > released.json
-
 n_orph=$(jq -r '.count' orphans.json)
-n_rel=$(jq -r '.count' released.json)
 
 {
   echo "Ceph orphan report"
@@ -191,11 +177,7 @@ n_rel=$(jq -r '.count' released.json)
       then "\(.entry)  size=\(.sizeGiB // "?") GiB  created=\(.created)  watchers=\(.watchers // "?")"
       else "\(.entry)  (cephfs subvolume or info unavailable)" end' orphans.json
   echo
-  echo "== 2. PVs left behind (Released/Failed) (${n_rel}) =="
-  echo
-  jq -r '.items[] | "\(.name)  phase=\(.phase)  reclaim=\(.reclaimPolicy)  size=\(.size)  was=\(.claim)  ceph=\(.ceph)"' released.json
-  echo
-  echo "== 3. RBD trash =="
+  echo "== 2. RBD trash =="
   echo
   for pool in $RBD_POOLS; do
     tools rbd trash ls -p "$pool" 2>/dev/null | sed "s|^|${pool}: |" || true
@@ -204,5 +186,5 @@ n_rel=$(jq -r '.count' released.json)
   echo "NOTE: review before deleting. watchers>0 means a client still has the image open."
 } > report.txt
 
-send_mail "$(mail_prefix) Weekly orphan report: ${n_orph} orphaned, ${n_rel} released PVs" \
-  report.txt orphans.json released.json
+send_mail "$(mail_prefix) Weekly orphan report: ${n_orph} orphaned" \
+  report.txt orphans.json

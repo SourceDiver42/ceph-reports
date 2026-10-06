@@ -50,6 +50,23 @@ smtp:
   # servers). Exposes credentials to MITM. Prefer trusting the CA via a bundle in
   # weekly.extraEnv (SSL_CERT_FILE) + weekly.extraVolumeMounts instead.
   insecure: false
+  # -- Secret holding a CA (or bundle) to trust for SMTP TLS. Mounted into the
+  # report container ONLY and exposed as SSL_CERT_FILE, so your internal CA alone
+  # is enough (no need to include public CAs — unlike weekly.extraEnv, this does
+  # not touch the tools init container). This is the recommended way to trust a
+  # self-signed/internal mail server. Preferred over smtp.insecure.
+  #   kubectl create secret generic smtp-ca --from-file=ca.crt=/path/to/ca.pem
+  caSecret: ""
+  # -- Key within caSecret holding the PEM CA bundle.
+  caSecretKey: ca.crt
+  # -- ConfigMap holding a CA bundle to trust (alternative to caSecret). Ideal for
+  # a cert-manager trust-manager Bundle, whose default target is a ConfigMap synced
+  # into every namespace. Mounted into the report container only, as SSL_CERT_FILE.
+  # Ignored when caSecret is set.
+  caConfigMap: ""
+  # -- Key within caConfigMap holding the PEM bundle (trust-manager's usual target
+  # key is "ca-certificates.crt").
+  caConfigMapKey: ca-certificates.crt
   # -- Use a pre-existing Secret with the SMTP keys below. Highest priority source.
   existingSecret: ""
   # -- Keys read from the SMTP secret (via envFrom + explicit mapping).

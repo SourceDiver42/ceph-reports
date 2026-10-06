@@ -122,19 +122,18 @@ reset_out
 CEPH_MODE="client" AUTO_DISCOVER="true" CEPH_MON_HOST="1.2.3.4:6789" \
   CEPH_KEY="AQ==" CEPH_USER="csi-rbd-provisioner" \
   bash "$WORK/scripts/weekly.sh"
-assert_contains "$OUT/subject" "Weekly orphan report: 1 orphaned, 1 released PVs" "weekly subject counts"
-assert_contains "$OUT/attach"  "orphans.json released.json" "weekly attaches both JSON files"
+assert_contains "$OUT/subject" "Weekly orphan report: 1 orphaned" "weekly subject counts"
+assert_contains "$OUT/attach"  "orphans.json" "weekly attaches orphans.json"
+assert_absent  "$OUT/attach"  "released.json" "weekly no longer attaches released.json"
 assert_eq "$(jq -r '.count' "$WORK/run/orphans.json")" "1" "orphans.json count=1"
 assert_eq "$(jq -r '.items[0].entry' "$WORK/run/orphans.json")" "replicapool/csi-vol-orphan" "orphan is csi-vol-orphan"
-assert_eq "$(jq -r '.count' "$WORK/run/released.json")" "1" "released.json count=1"
-assert_eq "$(jq -r '.items[0].name' "$WORK/run/released.json")" "pv-rbd-rel" "released PV is pv-rbd-rel"
 assert_absent "$WORK/run/orphans.txt" "csi-vol-aaa" "bound image not reported as orphan"
 
 echo "== weekly.sh (toolbox mode via kubectl exec) =="
 reset_out
 CEPH_MODE="toolbox" AUTO_DISCOVER="true" TOOLS_NS="rook-ceph" TOOLS="deploy/rook-ceph-tools" \
   bash "$WORK/scripts/weekly.sh"
-assert_contains "$OUT/subject" "Weekly orphan report: 1 orphaned, 1 released PVs" "toolbox mode produces same result"
+assert_contains "$OUT/subject" "Weekly orphan report: 1 orphaned" "toolbox mode produces same result"
 
 echo "== weekly.sh (fail-loud on rbd ls failure) =="
 reset_out

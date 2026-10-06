@@ -167,6 +167,11 @@ spec:
                 - name: ceph-etc
                   mountPath: /etc/ceph
                 {{- end }}
+                {{- if or .Values.smtp.caSecret .Values.smtp.caConfigMap }}
+                - name: smtp-ca
+                  mountPath: /etc/smtp-ca
+                  readOnly: true
+                {{- end }}
                 {{- with $job.extraVolumeMounts }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
@@ -189,6 +194,15 @@ spec:
                 defaultMode: 0555
             - name: tmp
               emptyDir: {}
+            {{- if .Values.smtp.caSecret }}
+            - name: smtp-ca
+              secret:
+                secretName: {{ .Values.smtp.caSecret }}
+            {{- else if .Values.smtp.caConfigMap }}
+            - name: smtp-ca
+              configMap:
+                name: {{ .Values.smtp.caConfigMap }}
+            {{- end }}
             {{- if and $client $ceph.client.keyringSecret }}
             - name: ceph-keyring
               secret:

@@ -68,6 +68,11 @@ spec:
                   readOnly: true
                 - name: tmp
                   mountPath: /tmp
+                {{- if or .Values.smtp.caSecret .Values.smtp.caConfigMap }}
+                - name: smtp-ca
+                  mountPath: /etc/smtp-ca
+                  readOnly: true
+                {{- end }}
                 {{- with $job.extraVolumeMounts }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
@@ -90,6 +95,15 @@ spec:
                 defaultMode: 0555
             - name: tmp
               emptyDir: {}
+            {{- if .Values.smtp.caSecret }}
+            - name: smtp-ca
+              secret:
+                secretName: {{ .Values.smtp.caSecret }}
+            {{- else if .Values.smtp.caConfigMap }}
+            - name: smtp-ca
+              configMap:
+                name: {{ .Values.smtp.caConfigMap }}
+            {{- end }}
             {{- with $job.extraVolumes }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

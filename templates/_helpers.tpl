@@ -249,6 +249,13 @@ names the scripts expect, plus the subject prefix. Keeps custom key names workin
     secretKeyRef:
       name: {{ $secret }}
       key: {{ $keys.to }}
+{{- if .Values.smtp.caSecret }}
+- name: SSL_CERT_FILE
+  value: /etc/smtp-ca/{{ .Values.smtp.caSecretKey }}
+{{- else if .Values.smtp.caConfigMap }}
+- name: SSL_CERT_FILE
+  value: /etc/smtp-ca/{{ .Values.smtp.caConfigMapKey }}
+{{- end }}
 {{- if .Values.smtp.insecure }}
 - name: SMTP_INSECURE
   value: "1"
