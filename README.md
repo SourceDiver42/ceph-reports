@@ -146,7 +146,7 @@ weekly:
 | `smtp.existingSecret` | `""` | Reference an existing SMTP secret (highest priority). |
 | `smtp.keys.{url,user,pass,from,to}` | `SMTP_*`/`MAIL_*` | Secret key names (remap to match your secret). |
 | `smtp.secret.create` | `false` | Render an inline secret from values (DEV ONLY). |
-| `mail.subjectPrefix` | `[ceph]` | Subject prefix for all report emails. |
+| `mail.subjectPrefix` | `[rook]` | Subject prefix for all report emails. |
 | `mail.clusterName` | `""` | Appended to the subject as `<prefix> [<clusterName>]`. Set per environment. |
 | `mail.clusterNameFrom.enabled` | `false` | Best-effort: read the cluster name from a ConfigMap at runtime when `clusterName` is empty. |
 | `daily.*` / `weekly.*` | see `values.yaml` | Per-job `enabled`, `schedule`, `timeZone`, `concurrencyPolicy`, history limits, `backoffLimit`, `ttlSecondsAfterFinished`, `suspend`, `resources`, `nodeSelector`, `tolerations`, `affinity`, `extraEnv`, `extraVolumes`, `extraVolumeMounts`. |
@@ -165,7 +165,7 @@ environment (works well with per-environment GitOps values):
 
 ```yaml
 mail:
-  clusterName: turing   # subjects become "[ceph] [turing] ..."
+  clusterName: turing   # subjects become "[rook] [turing] ..."
 ```
 
 Optionally auto-detect it from a ConfigMap at runtime (creates a `configmaps:get`

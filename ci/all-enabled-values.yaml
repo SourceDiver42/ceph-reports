@@ -22,7 +22,7 @@ smtp:
   existingSecret: "ceph-reports-smtp"
 
 mail:
-  subjectPrefix: "[ceph][prod]"
+  subjectPrefix: "[rook][prod]"
 
 common:
   podLabels:

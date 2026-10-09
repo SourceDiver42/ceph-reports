@@ -93,7 +93,7 @@ smtp:
 
 mail:
   # -- Subject prefix for all report emails.
-  subjectPrefix: "[ceph]"
+  subjectPrefix: "[rook]"
   # -- Cluster name appended to the subject as "<subjectPrefix> [<clusterName>]".
   # Recommended: set this per environment (e.g. turing / mocha) in your values file.
   clusterName: ""

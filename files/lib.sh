@@ -58,7 +58,7 @@ fi
 
 # Effective subject prefix: "<subjectPrefix> [<clusterName>]" when a cluster name is known.
 mail_prefix() {
-  local p="${SUBJECT_PREFIX:-[ceph]}"
+  local p="${SUBJECT_PREFIX:-[rook]}"
   [ -n "${CLUSTER_NAME:-}" ] && p="${p} [${CLUSTER_NAME}]"
   printf '%s' "$p"
 }
