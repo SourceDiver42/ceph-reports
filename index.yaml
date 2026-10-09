@@ -3,7 +3,30 @@ entries:
   ceph-reports:
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-06T19:29:17.673388287Z"
+    created: "2026-10-09T21:40:05.820881141Z"
+    description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan
+      reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
+    digest: 0fa37d4bf2db9a3cec2e6c7e24bc019ce77d3be8480d41fc9d305be7f2063d7e
+    home: https://github.com/SourceDiver42/ceph-reports
+    keywords:
+    - ceph
+    - rook
+    - rbd
+    - cephfs
+    - reporting
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - name: SourceDiver42
+    name: ceph-reports
+    sources:
+    - https://github.com/SourceDiver42/ceph-reports
+    type: application
+    urls:
+    - https://sourcediver42.github.io/ceph-reports/ceph-reports-0.6.1.tgz
+    version: 0.6.1
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-10-09T21:40:05.819556489Z"
     description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan
       reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
     digest: ee84cc1b2edbfd17d601c178b8963e8729bb542d2f43dca4375814db68f77c5f
@@ -26,7 +49,7 @@ entries:
     version: 0.6.0
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-06T19:29:17.672732103Z"
+    created: "2026-10-09T21:40:05.818426421Z"
     description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan
       reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
     digest: c9a901a0613809d8d48b9c5a12fe4d37d6427120d64f75d6a992503434c82ab0
@@ -49,7 +72,7 @@ entries:
     version: 0.5.0
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-06T19:29:17.672088047Z"
+    created: "2026-10-09T21:40:05.817309578Z"
     description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan
       reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
     digest: 5eaade099a8bc92582aafc3e874b6a3a57ea8276f869349bfed8230251576cf4
@@ -72,7 +95,7 @@ entries:
     version: 0.4.1
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-06T19:29:17.671484992Z"
+    created: "2026-10-09T21:40:05.815297156Z"
     description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan
       reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
     digest: aab14dee9036c50e937a95b43fe2e71f4c61100655b02fc56af7b547d56a9f4d
@@ -95,7 +118,7 @@ entries:
     version: 0.4.0
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-06T19:29:17.670868327Z"
+    created: "2026-10-09T21:40:05.813258495Z"
     description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan
       reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
     digest: 2ea1e178fcf54b8b7eb88206385969abd57a2bac1441811f2da242fb93b9708d
@@ -118,7 +141,7 @@ entries:
     version: 0.3.0
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-06T19:29:17.670276139Z"
+    created: "2026-10-09T21:40:05.811376718Z"
     description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan
       reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
     digest: 013b79c2ee1d71cc0dde16699af5e75f37d3d4ad1493abbc52e070b86118b545
@@ -141,7 +164,7 @@ entries:
     version: 0.2.0
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-06T19:29:17.669662649Z"
+    created: "2026-10-09T21:40:05.809441862Z"
     description: CronJobs that email daily Ceph PVC->pod mappings and weekly orphan
       reports. Works with classic Rook (toolbox) and external-mode Ceph (direct client).
     digest: 8d627f0df0fdbfc1e4a5afba167414b54ed9d5d4384d39795a7d63985416b72e
@@ -162,4 +185,4 @@ entries:
     urls:
     - https://sourcediver42.github.io/ceph-reports/ceph-reports-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-06T19:29:17.66863064Z"
+generated: "2026-10-09T21:40:05.807393202Z"
